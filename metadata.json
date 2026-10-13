@@ -1,0 +1,8 @@
+{
+  "name": "Remix Hindu wedding template 6",
+  "description": "Customizable wedding e-card for Nitin sir client -2 with isolated cloud database and live-preview admin panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
