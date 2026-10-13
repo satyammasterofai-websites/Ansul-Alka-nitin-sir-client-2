@@ -399,23 +399,15 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
   const handleSwitchToOfficialData = async () => {
     setIsRestoringOfficial(true);
     try {
-      // 1. Fetch fresh official master data from Firestore 'remix-v1' or fall back to defaultSettings
-      let officialData = defaultSettings;
-      try {
-        const snap = await getDoc(doc(db, 'wedding_invitations', MASTER_CARD_ID));
-        if (snap.exists()) {
-          officialData = { ...defaultSettings, ...snap.data() };
-        }
-      } catch (err) {
-        console.warn("Could not load from Firestore, using bundled defaultSettings:", err);
-      }
+      // Restore client template data for Nitin sir client -2
+      const clientData = { ...defaultSettings };
 
-      // 2. Set settings in state
-      setSettings(officialData);
+      // Set settings in state
+      setSettings(clientData);
 
-      // 3. Save to current cardId document in Firestore so this instance updates immediately
+      // Save to current cardId document in Firestore so this instance updates immediately
       const targetCardId = sanitizeCardIdForSave(cardId);
-      const cleanData = JSON.parse(JSON.stringify(officialData));
+      const cleanData = JSON.parse(JSON.stringify(clientData));
       cleanData.clientName = 'nitin sir client -2';
       cleanData.clientId = 'nitin-sir-client-2';
       cleanData.savedAs = 'nitin sir client -2';
@@ -431,17 +423,17 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
       saveToLocalStorage(targetCardId, cleanData);
       saveToLocalStorage('nitin sir client -2', cleanData);
 
-      // 4. Save preference in localStorage so subsequent page reloads stay on this official data
+      // Save preference in localStorage
       localStorage.setItem('wedding_custom_card_id', targetCardId);
 
       setStatusMessage({
-        text: `🎉 Cloned Official Data into '${REMIX_WEBSITE_NAME}'! All data is saved to isolated database fields in the name of 'nitin sir client -2'.`,
+        text: `🎉 Restored client data for '${REMIX_WEBSITE_NAME}'! All data is saved in the name of 'nitin sir client -2'.`,
         type: 'success'
       });
       setTimeout(() => setStatusMessage(null), 6000);
     } catch (error: any) {
-      console.error("Error switching to official data:", error);
-      setStatusMessage({ text: `Failed to switch to official data: ${error.message}`, type: 'error' });
+      console.error("Error restoring client data:", error);
+      setStatusMessage({ text: `Failed to restore client data: ${error.message}`, type: 'error' });
       setTimeout(() => setStatusMessage(null), 6000);
     } finally {
       setIsRestoringOfficial(false);
@@ -1374,8 +1366,8 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-amber-600 shrink-0" />
                     <div>
-                      <h4 className="text-sm font-semibold text-amber-950">Clone Base Template Assets</h4>
-                      <p className="text-[11px] text-amber-800">Premium Template Design</p>
+                      <h4 className="text-sm font-semibold text-amber-950">Restore Client Template</h4>
+                      <p className="text-[11px] text-amber-800">Nitin sir client -2</p>
                     </div>
                   </div>
                   <span className="text-[11px] font-mono bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded font-medium">
@@ -1383,7 +1375,7 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
                   </span>
                 </div>
                 <p className="text-xs text-amber-900/90 leading-relaxed">
-                  Use this option to clone the original template design assets (backgrounds, music, ceremonies, and 4 caricatures) into this remix database without ever affecting the master website.
+                  Use this option to restore all verified wedding details for Anshul & Alka (groom & bride parents, 4 ceremonies in order, caricatures, and venues) into this database.
                 </p>
                 <div className="flex flex-col gap-2 pt-1">
                   <button
@@ -1394,12 +1386,12 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
                     {isRestoringOfficial ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Restoring Official Data...</span>
+                        <span>Restoring Client Data...</span>
                       </>
                     ) : (
                       <>
                         <RotateCcw className="w-4 h-4" />
-                        <span>Switch to Official Data</span>
+                        <span>Reset to Nitin Sir Client -2 Data</span>
                       </>
                     )}
                   </button>

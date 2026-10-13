@@ -84,29 +84,18 @@ export default function App() {
           dataToUse = docSnap.data();
           console.log(`Loaded data from Firestore for card: ${cardId}`);
         } else {
-          // If no document exists for this cardId:
-          console.log(`Card document '${cardId}' not found. Loading template from master '${MASTER_CARD_ID}'...`);
+          // If no document exists in Firestore for this cardId:
+          console.log(`Card document '${cardId}' not found in Firestore. Using Nitin sir client -2 default data...`);
           isNewRemixDoc = true;
 
-          if (cardId !== MASTER_CARD_ID) {
-            try {
-              const masterSnap = await getDoc(doc(db, 'wedding_invitations', MASTER_CARD_ID));
-              if (masterSnap.exists()) {
-                dataToUse = masterSnap.data();
-                console.log(`Successfully cloned template data from ${MASTER_CARD_ID} into remix ${cardId}`);
-              }
-            } catch (err) {
-              console.warn(`Could not load master template ${MASTER_CARD_ID}:`, err);
-            }
-          }
-
-          // If still no Firestore data, check local storage
-          if (!dataToUse) {
-            const saved = getFromLocalStorage(cardId);
-            if (saved) {
-              dataToUse = saved;
-              console.log(`Recovered data from local storage for ${cardId}`);
-            }
+          // Check local storage first
+          const saved = getFromLocalStorage(cardId);
+          if (saved) {
+            dataToUse = saved;
+            console.log(`Recovered data from local storage for ${cardId}`);
+          } else {
+            // Default directly to Anshul & Alka template data
+            dataToUse = defaultSettings;
           }
         }
 
