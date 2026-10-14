@@ -6,11 +6,12 @@ import { MoveDown, MapPin, Settings, Instagram, MessageCircle } from 'lucide-rea
 
 interface Props {
   onOpenAdmin?: () => void;
+  onPauseMusic?: () => void;
   settings: ECardSettings;
   key?: string;
 }
 
-export function HeroSection({ settings, onOpenAdmin }: Props) {
+export function HeroSection({ settings, onOpenAdmin, onPauseMusic }: Props) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 1.05 }}
@@ -46,42 +47,50 @@ export function HeroSection({ settings, onOpenAdmin }: Props) {
               {settings.heroTopText || 'We cordially invite you to witness the beginning of our forever and celebrate the wedding ceremony of'}
             </p>
 
-            <div className="flex flex-col items-center w-full">
-              <h1 
-                className="text-5xl md:text-7xl lg:text-8xl leading-tight py-2 md:py-4 whitespace-pre-wrap transition-all tracking-wide text-center"
-                style={{
-                  fontFamily: `"${settings.heroGroomBrideFont || 'Playfair Display'}", serif`,
-                  color: settings.heroGroomBrideColor || '#7a103c',
-                  opacity: settings.heroGroomBrideOpacity !== undefined ? settings.heroGroomBrideOpacity / 100 : 0.9,
-                  textShadow: '0 1px 3px rgba(255, 255, 255, 0.75), 0 2px 10px rgba(122, 16, 60, 0.15)'
-                }}
-              >
-                {settings.heroGroomName || 'Anshul Kestwal'}
-              </h1>
-              <p className="font-serif text-xs md:text-base lg:text-lg tracking-wider uppercase mt-2 md:mt-4 whitespace-pre-wrap">
-                {settings.heroGroomParents || 'S/o Mr. Rishi Ballabh\n& Mrs. Shashi Kestwal'}
-              </p>
-            </div>
+            {/* Systematic Centered Groom & Bride Section with small cohesive gap */}
+            <div className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto text-center">
+              {/* Groom Block */}
+              <div className="flex flex-col items-center justify-center w-full">
+                <h1 
+                  className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-tight py-0.5 sm:py-1 whitespace-pre-wrap transition-all tracking-wide text-center"
+                  style={{
+                    fontFamily: `"${settings.heroGroomBrideFont || 'Playfair Display'}", serif`,
+                    color: settings.heroGroomBrideColor || '#7a103c',
+                    opacity: settings.heroGroomBrideOpacity !== undefined ? settings.heroGroomBrideOpacity / 100 : 0.9,
+                    textShadow: '0 1px 3px rgba(255, 255, 255, 0.75), 0 2px 10px rgba(122, 16, 60, 0.15)'
+                  }}
+                >
+                  {settings.heroGroomName || 'Anshul Kestwal'}
+                </h1>
+                <p className="font-serif text-xs sm:text-sm md:text-base lg:text-lg tracking-wider uppercase mt-1 md:mt-1.5 whitespace-pre-wrap text-center max-w-md mx-auto leading-relaxed">
+                  {settings.heroGroomParents || 'S/o Mr. Rishi Ballabh Kestwal & Mrs. Shashi Kestwal'}
+                </p>
+              </div>
 
-            <p className="font-serif text-base md:text-2xl italic my-6 md:my-10 text-[#8a1c47]">
-              {settings.heroMiddleText || 'with'}
-            </p>
+              {/* Connector - with very small gap */}
+              <div className="flex items-center justify-center my-1.5 md:my-2.5">
+                <p className="font-serif text-sm sm:text-base md:text-xl italic text-[#8a1c47] text-center font-medium">
+                  {settings.heroMiddleText || 'with'}
+                </p>
+              </div>
 
-            <div className="flex flex-col items-center w-full">
-              <h1 
-                className="text-5xl md:text-7xl lg:text-8xl leading-tight py-2 md:py-4 whitespace-pre-wrap transition-all tracking-wide text-center"
-                style={{
-                  fontFamily: `"${settings.heroGroomBrideFont || 'Playfair Display'}", serif`,
-                  color: settings.heroGroomBrideColor || '#7a103c',
-                  opacity: settings.heroGroomBrideOpacity !== undefined ? settings.heroGroomBrideOpacity / 100 : 0.9,
-                  textShadow: '0 1px 3px rgba(255, 255, 255, 0.75), 0 2px 10px rgba(122, 16, 60, 0.15)'
-                }}
-              >
-                {settings.heroBrideName || 'Alka Joshi'}
-              </h1>
-              <p className="font-serif text-xs md:text-base lg:text-lg tracking-wider uppercase mt-2 md:mt-4 pb-6 md:pb-10 whitespace-pre-wrap">
-                {settings.heroBrideParents || 'D/o Mr. Girish\n& Mrs. Bhawna Joshi'}
-              </p>
+              {/* Bride Block */}
+              <div className="flex flex-col items-center justify-center w-full">
+                <h1 
+                  className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-tight py-0.5 sm:py-1 whitespace-pre-wrap transition-all tracking-wide text-center"
+                  style={{
+                    fontFamily: `"${settings.heroGroomBrideFont || 'Playfair Display'}", serif`,
+                    color: settings.heroGroomBrideColor || '#7a103c',
+                    opacity: settings.heroGroomBrideOpacity !== undefined ? settings.heroGroomBrideOpacity / 100 : 0.9,
+                    textShadow: '0 1px 3px rgba(255, 255, 255, 0.75), 0 2px 10px rgba(122, 16, 60, 0.15)'
+                  }}
+                >
+                  {settings.heroBrideName || 'Alka Joshi'}
+                </h1>
+                <p className="font-serif text-xs sm:text-sm md:text-base lg:text-lg tracking-wider uppercase mt-1 md:mt-1.5 pb-2 md:pb-4 whitespace-pre-wrap text-center max-w-md mx-auto leading-relaxed">
+                  {settings.heroBrideParents || 'D/o Mr. Girish Joshi & Mrs. Bhawna Joshi'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -256,7 +265,14 @@ export function HeroSection({ settings, onOpenAdmin }: Props) {
                 {settings.familyInviteSubHeading2 || 'AWAITING YOUR GRACIOUS PRESENCE'}
               </p>
               <div className="flex flex-col gap-4 font-serif text-lg md:text-xl text-[#6B5A51] leading-relaxed whitespace-pre-wrap">
-                {settings.familyNames || 'Mr. Rishi Ballabh Kestwal & Mrs. Shashi Kestwal\n(Parents of Groom)\n\nMr. Girish Joshi & Mrs. Bhawna Joshi\n(Parents of Bride)'}
+                {(() => {
+                  const raw = settings.familyNames || 'Mr. Rishi Ballabh Kestwal & Mrs. Shashi Kestwal\n(Parents of the Groom)\n\nMr. Girish Joshi & Mrs. Bhawna Joshi\n(Parents of the Bride)';
+                  return raw
+                    .replace(/Parents of Groom/g, 'Parents of the Groom')
+                    .replace(/Parents of Bride/g, 'Parents of the Bride')
+                    .replace(/Parents of the the Groom/g, 'Parents of the Groom')
+                    .replace(/Parents of the the Bride/g, 'Parents of the Bride');
+                })()}
               </div>
             </div>
           </motion.div>
@@ -275,7 +291,7 @@ export function HeroSection({ settings, onOpenAdmin }: Props) {
               {settings.mapSubHeading || 'VENUE'}
             </p>
             <h3 className="text-5xl md:text-6xl font-['Great_Vibes',cursive] text-[#8D2342] mb-8">
-              {settings.mapHeading || 'Where We Celebrate'}
+              {(!settings.mapHeading || settings.mapHeading === 'Where We Celebrate') ? 'This is Where We Celebrate' : settings.mapHeading}
             </h3>
             <p className="font-serif text-lg md:text-xl text-[#6B5A51] mb-12 max-w-sm leading-relaxed">
               {settings.mapAddress || 'Royal Garden, Jaipur, Rajasthan'}
@@ -301,6 +317,11 @@ export function HeroSection({ settings, onOpenAdmin }: Props) {
               href={"https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(settings.mapAddress || 'Royal Garden, Jaipur, Rajasthan')}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                if (onPauseMusic) {
+                  onPauseMusic();
+                }
+              }}
               className="px-10 py-4 bg-[#8D2342] text-[#FAF5EA] rounded-full font-serif tracking-[0.15em] shadow-[0_8px_25px_-8px_rgba(141,35,66,0.6)] hover:shadow-[0_8px_30px_-5px_rgba(141,35,66,0.5)] hover:scale-[1.02] transition-all text-[11px] sm:text-xs uppercase font-bold flex items-center gap-3 border border-[#C9A15A]/20"
             >
               <MapPin className="w-4 h-4" />

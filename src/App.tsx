@@ -12,6 +12,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { FallingEmojis } from './components/FallingEmojis';
 
 import { Butterflies } from './components/Butterflies';
+import { FloatingMusicButton } from './components/FloatingMusicButton';
 
 type ViewState = 'opening' | 'hero' | 'admin';
 
@@ -29,6 +30,7 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
   const audioRef = React.useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   
   const [cardId, setCardId] = useState<string>(() => {
     return determineInitialCardId();
@@ -269,6 +271,57 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isExiting]);
 
+  // Synchronize playing state with the audio element
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => setIsPlaying(false);
+
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [settings.musicUrl]);
+
+  // Pause background music automatically when user exits tab, switches apps, or blurs window
+  useEffect(() => {
+    const handleVisibilityOrExit = () => {
+      if (document.hidden && audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+    const handleWindowBlur = () => {
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+    const handlePageHide = () => {
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityOrExit);
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityOrExit);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, []);
+
   // Save settings whenever they change, with a slight debounce
   useEffect(() => {
     if (isLoading) return;
@@ -455,9 +508,33 @@ export default function App() {
     setIsTransitioning(false);
     setCurrentView('hero');
     if (audioRef.current && settings.musicUrl) {
-      audioRef.current.play().catch((err) => {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((err) => {
         console.warn("Autoplay prevented:", err);
+        setIsPlaying(false);
       });
+    }
+  };
+
+  const handlePauseMusic = () => {
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const togglePlayMusic = () => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+      }).catch((err) => {
+        console.warn("Audio play error:", err);
+      });
+    } else {
+      audioRef.current.pause();
+      setIsPlaying(false);
     }
   };
 
@@ -516,9 +593,17 @@ export default function App() {
                 key="hero" 
                 settings={settings}
                 onOpenAdmin={handleOpenAdmin}
+                onPauseMusic={handlePauseMusic}
               />
             )}
           </AnimatePresence>
+
+          {currentView === 'hero' && settings.musicUrl && (
+            <FloatingMusicButton 
+              isPlaying={isPlaying} 
+              onToggle={togglePlayMusic} 
+            />
+          )}
         </>
       )}
 

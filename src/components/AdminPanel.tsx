@@ -1156,7 +1156,7 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
                   <input
                     type="text"
                     name="mapHeading"
-                    value={settings.mapHeading || 'Where we Celebrate'}
+                    value={settings.mapHeading || 'This is Where We Celebrate'}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-stone-200 rounded-md focus:ring-stone-900 focus:border-stone-900 sm:text-sm text-stone-600"
                   />
