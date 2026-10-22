@@ -78,6 +78,18 @@ export interface ECardSettings {
   footerInviteFamilies?: string;
   footerInviteBgColor?: string;
   
+  // Advertisement & Creator Section
+  showAdvertisement?: boolean;
+  adBadge?: string;
+  adHeading?: string;
+  adTagline?: string;
+  adLines?: string[];
+  adWhatsappUrl?: string;
+  adWhatsappNumber?: string;
+  adInstagramUrl?: string;
+  adInstagramHandle?: string;
+  adFooterText?: string;
+  
   // New section option for holding page
   paymentPending?: boolean;
   paymentPendingText?: string;
@@ -257,6 +269,19 @@ export const defaultSettings: ECardSettings = {
   footerHashtag: '#ANSHULWEDSALKA',
   footerInviteFamilies: 'KESTWAL & JOSHI FAMILIES',
   footerInviteBgColor: '#3B291F',
+  showAdvertisement: true,
+  adTagline: 'Want a wedding invitation website like this? Connect with us:',
+  adLines: [
+    '🎨 Custom animated couple caricatures tailored to your love story',
+    '🎵 Background music with floating audio player & smooth effects',
+    '📍 Interactive Google Maps directions to every venue and function',
+    '📱 1-Click effortless sharing on WhatsApp & Social Media for all guests'
+  ],
+  adWhatsappUrl: 'https://wa.me/919456411569?text=Hi!%20I%20loved%20your%20digital%20wedding%20invitation%20website%20and%20would%20like%20to%20create%20one%20for%20my%20wedding.',
+  adWhatsappNumber: '+91 94564 11569',
+  adInstagramUrl: 'https://www.instagram.com/digiinvitations_?igsi=MWh1ZnZhMm1xNnNkdw==',
+  adInstagramHandle: '@digiinvitations_',
+  adFooterText: 'Crafted with 🤍 by digiinvitations_',
   paymentPending: false,
   paymentPendingText: "'Anshul weds Alka' wedding Invitation website didn't purchase yet",
 };

@@ -1331,6 +1331,94 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
                   <input type="text" name="footerInviteBgColor" value={settings.footerInviteBgColor || ''} onChange={handleChange} className="flex-1 px-3 py-2 border border-stone-200 rounded-md focus:ring-stone-900 focus:border-stone-900 sm:text-sm text-stone-600 uppercase" />
                 </div>
               </div>
+
+              <h3 className="text-lg font-medium text-stone-800 border-b pb-2 mt-8 flex items-center justify-between">
+                <span>Small Advertisement & Creator Links</span>
+                <label className="flex items-center gap-2 text-xs font-normal text-stone-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.showAdvertisement !== false}
+                    onChange={(e) => setSettings(prev => ({ ...prev, showAdvertisement: e.target.checked }))}
+                    className="rounded text-stone-900 focus:ring-stone-900 border-stone-300"
+                  />
+                  Enable Advertisement
+                </label>
+              </h3>
+
+              <div className="space-y-3 bg-white p-4 rounded-xl border border-stone-100 shadow-sm">
+                <label className="block text-sm font-medium text-stone-800">Small Line Message for Advertising</label>
+                <input
+                  type="text"
+                  name="adTagline"
+                  value={settings.adTagline || ''}
+                  onChange={handleChange}
+                  placeholder="Want a digital wedding invitation website like this? Connect with us:"
+                  className="w-full px-3 py-2 border border-stone-200 rounded-md focus:ring-stone-900 sm:text-sm text-stone-600"
+                />
+                <p className="text-xs text-stone-400">This small message appears right above the WhatsApp and Instagram icons at the end of the website.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3 bg-white p-4 rounded-xl border border-emerald-100 shadow-sm">
+                  <label className="block text-sm font-medium text-emerald-800 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#25D366]"></span>
+                    WhatsApp Number
+                  </label>
+                  <input
+                    type="text"
+                    name="adWhatsappNumber"
+                    value={settings.adWhatsappNumber || ''}
+                    onChange={handleChange}
+                    placeholder="+91 94564 11569"
+                    className="w-full px-3 py-2 border border-stone-200 rounded-md focus:ring-stone-900 sm:text-sm text-stone-600"
+                  />
+                  <label className="block text-xs font-medium text-stone-500">WhatsApp Link URL</label>
+                  <input
+                    type="text"
+                    name="adWhatsappUrl"
+                    value={settings.adWhatsappUrl || ''}
+                    onChange={handleChange}
+                    placeholder="https://wa.me/919456411569..."
+                    className="w-full px-3 py-2 border border-stone-200 rounded-md focus:ring-stone-900 sm:text-xs text-stone-600"
+                  />
+                </div>
+
+                <div className="space-y-3 bg-white p-4 rounded-xl border border-pink-100 shadow-sm">
+                  <label className="block text-sm font-medium text-pink-800 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#E4405F]"></span>
+                    Instagram Handle
+                  </label>
+                  <input
+                    type="text"
+                    name="adInstagramHandle"
+                    value={settings.adInstagramHandle || ''}
+                    onChange={handleChange}
+                    placeholder="@digiinvitations_"
+                    className="w-full px-3 py-2 border border-stone-200 rounded-md focus:ring-stone-900 sm:text-sm text-stone-600"
+                  />
+                  <label className="block text-xs font-medium text-stone-500">Instagram Profile URL</label>
+                  <input
+                    type="text"
+                    name="adInstagramUrl"
+                    value={settings.adInstagramUrl || ''}
+                    onChange={handleChange}
+                    placeholder="https://www.instagram.com/digiinvitations_..."
+                    className="w-full px-3 py-2 border border-stone-200 rounded-md focus:ring-stone-900 sm:text-xs text-stone-600"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3 bg-white p-4 rounded-xl border border-stone-100 shadow-sm">
+                <label className="block text-sm font-medium text-stone-800">Bottom Credit Line</label>
+                <input
+                  type="text"
+                  name="adFooterText"
+                  value={settings.adFooterText || ''}
+                  onChange={handleChange}
+                  placeholder="Crafted with 🤍 by digiinvitations_"
+                  className="w-full px-3 py-2 border border-stone-200 rounded-md focus:ring-stone-900 sm:text-sm text-stone-600"
+                />
+              </div>
             </div>
           ) : activeTab === 'advanced' ? (
             <div className="space-y-6">
