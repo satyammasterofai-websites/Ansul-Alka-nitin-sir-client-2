@@ -1,7 +1,7 @@
 /**
  * cardInstance.ts
  * Manages unique database identification, remix isolation, and URL synchronization.
- * Guarantees that remixed websites in AI Studio never overlap or overwrite data from the official website.
+ * Guarantees that remixed websites in AI Studio never overlap or overwrite data from other websites.
  */
 
 export const MASTER_CARD_ID = 'official-wedding-card';
@@ -9,29 +9,35 @@ export const OFFICIAL_APPLET_ID = 'a96df12c-9a53-491f-9834-0d2693a3ab95';
 export const OFFICIAL_SUBDOMAIN = 'zu6oj4k573mqstevuaebw5';
 export const OFFICIAL_WEBSITE_NAME = 'Riyansh & Priyanshi Premium Template-3';
 
-export const REMIX_DEFAULT_CARD_ID = 'nitin-sir-client-2';
-export const REMIX_WEBSITE_NAME = 'Anshul & Alka Wedding Invitation';
+// Original Website Details
+export const ORIGINAL_APPLET_SUBDOMAIN = 'lc7jhw2xiplwcbu564m46i';
+export const ORIGINAL_CARD_ID = 'nitin-sir-client-2';
+export const ORIGINAL_WEBSITE_NAME = 'Anshul & Alka Wedding Invitation';
+
+// Upcoming Remix Website Details ("Anshul & Alka 2")
+export const REMIX_DEFAULT_CARD_ID = 'anshul-alka-2';
+export const REMIX_WEBSITE_NAME = 'Anshul & Alka 2';
 
 /**
  * Returns true only if the running code is in the official template container.
- * In this project, this codebase is the dedicated remix for "Nitin sir client -2",
- * so this is guaranteed to return false to completely prevent overlapping with official data.
  */
 export function isOfficialWebsite(): boolean {
   return false;
 }
 
 /**
- * Returns the website name for this remix
+ * Returns the website name based on active cardId or detected remix state
  */
-export function getWebsiteName(): string {
+export function getWebsiteName(targetCardId?: string): string {
+  const effectiveId = targetCardId || (typeof window !== 'undefined' ? determineInitialCardId() : REMIX_DEFAULT_CARD_ID);
+  if (effectiveId === 'anshul-alka-2' || effectiveId.toLowerCase().includes('alka-2') || effectiveId.toLowerCase().includes('alka 2')) {
+    return REMIX_WEBSITE_NAME;
+  }
+  if (effectiveId === ORIGINAL_CARD_ID || effectiveId === 'nitin sir client -2') {
+    return ORIGINAL_WEBSITE_NAME;
+  }
   return REMIX_WEBSITE_NAME;
 }
-
-/**
- * List of document keys representing this client in Firestore
- */
-export const CLIENT_DOCUMENT_IDS = ['nitin-sir-client-2', 'nitin sir client -2'];
 
 /**
  * Detects the AI Studio applet subdomain from window.location.hostname
@@ -45,6 +51,15 @@ export function detectAppletSubdomain(): string | null {
 }
 
 /**
+ * Checks if the current app is running in the original parent applet or in a new remix
+ */
+export function isOriginalAppletInstance(): boolean {
+  const subdomain = detectAppletSubdomain();
+  if (!subdomain) return false;
+  return subdomain === ORIGINAL_APPLET_SUBDOMAIN;
+}
+
+/**
  * Generates or retrieves a unique isolated database ID for a remix container
  */
 export function getRemixDefaultId(): string {
@@ -53,9 +68,13 @@ export function getRemixDefaultId(): string {
 
 /**
  * Determines the appropriate card/database ID for the current instance.
- * Follows strict isolation:
- * Always defaults to isolated REMIX_DEFAULT_CARD_ID ('nitin-sir-client-2')
- * and strictly prevents loading or writing to official template.
+ * Strict Isolation Rules:
+ * 1. URL search parameter (?id=, ?card=, ?remix=) takes precedence if specified.
+ * 2. Saved preference in localStorage (wedding_custom_card_id) if specified.
+ * 3. Subdomain detection:
+ *    - If running on original subdomain 'lc7jhw2xiplwcbu564m46i', default to 'nitin-sir-client-2'.
+ *    - If running on ANY newly created remix applet, default automatically to 'anshul-alka-2'
+ *      with 100% separate fields and zero data overlap.
  */
 export function determineInitialCardId(): string {
   if (typeof window !== 'undefined') {
@@ -74,8 +93,11 @@ export function determineInitialCardId(): string {
         ) {
           return REMIX_DEFAULT_CARD_ID;
         }
-        if (trimmed === 'nitin sir client -2' || trimmed === 'nitin-sir-client-2') {
+        if (trimmed === 'anshul-alka-2' || trimmed === 'anshul & alka 2' || trimmed === 'anshul-alka 2') {
           return REMIX_DEFAULT_CARD_ID;
+        }
+        if (trimmed === 'nitin sir client -2' || trimmed === 'nitin-sir-client-2') {
+          return ORIGINAL_CARD_ID;
         }
         return trimmed;
       }
@@ -88,28 +110,36 @@ export function determineInitialCardId(): string {
       const savedCardId = localStorage.getItem('wedding_custom_card_id');
       if (savedCardId && savedCardId.trim() !== '') {
         const trimmed = savedCardId.trim();
-        // Disallow remix from reading master card ID from legacy storage
         if (
           trimmed !== MASTER_CARD_ID && 
           trimmed !== 'official-wedding-card' && 
           trimmed !== 'remix-v1' &&
           !trimmed.toLowerCase().includes('official')
         ) {
-          if (trimmed === 'nitin sir client -2' || trimmed === 'nitin-sir-client-2') {
+          if (trimmed === 'anshul-alka-2' || trimmed === 'anshul & alka 2') {
             return REMIX_DEFAULT_CARD_ID;
+          }
+          if (trimmed === 'nitin sir client -2' || trimmed === 'nitin-sir-client-2') {
+            return ORIGINAL_CARD_ID;
           }
           return trimmed;
         }
       }
     } catch (e) {}
+
+    // 3. Subdomain check: if running in the original applet container, keep original card
+    if (isOriginalAppletInstance()) {
+      return ORIGINAL_CARD_ID;
+    }
   }
 
-  // Default isolated database document
+  // In any new remix container, default to 'anshul-alka-2'
   return REMIX_DEFAULT_CARD_ID;
 }
 
 /**
- * Security guard: ensures this remix CAN NEVER write to the official master documents
+ * Security guard: ensures remix CAN NEVER write to official master documents
+ * and keeps card IDs sanitized.
  */
 export function sanitizeCardIdForSave(targetCardId: string): string {
   if (
@@ -119,7 +149,7 @@ export function sanitizeCardIdForSave(targetCardId: string): string {
     targetCardId === 'remix-v1' ||
     targetCardId.toLowerCase().includes('official')
   ) {
-    console.warn(`[DATA ISOLATION] Blocked remix from writing to official template '${targetCardId}'. Redirected to '${REMIX_DEFAULT_CARD_ID}'.`);
+    console.warn(`[DATA ISOLATION] Blocked write to official template '${targetCardId}'. Redirected to '${REMIX_DEFAULT_CARD_ID}'.`);
     return REMIX_DEFAULT_CARD_ID;
   }
   return targetCardId;
@@ -140,7 +170,8 @@ export function saveToLocalStorage(cardId: string, settings: any): void {
     const safeCardId = sanitizeCardIdForSave(cardId);
     const dataStr = JSON.stringify(settings);
     localStorage.setItem(getStorageKey(safeCardId), dataStr);
-    if (safeCardId === REMIX_DEFAULT_CARD_ID) {
+    // Only maintain alias if specifically operating on original client
+    if (safeCardId === ORIGINAL_CARD_ID) {
       localStorage.setItem(getStorageKey('nitin sir client -2'), dataStr);
     }
   } catch (e) {
@@ -149,13 +180,13 @@ export function saveToLocalStorage(cardId: string, settings: any): void {
 }
 
 /**
- * Gets settings from localStorage with fallback to client alias
+ * Gets settings from localStorage with fallback to client alias if applicable
  */
 export function getFromLocalStorage(cardId: string): any | null {
   try {
     const scoped = localStorage.getItem(getStorageKey(cardId));
     if (scoped) return JSON.parse(scoped);
-    if (cardId === REMIX_DEFAULT_CARD_ID) {
+    if (cardId === ORIGINAL_CARD_ID) {
       const alias = localStorage.getItem(getStorageKey('nitin sir client -2'));
       if (alias) return JSON.parse(alias);
     }
@@ -185,3 +216,4 @@ export function getShareableUrl(cardId: string): string {
 export function isMasterTemplate(cardId: string): boolean {
   return cardId === MASTER_CARD_ID || cardId === 'official-wedding-card';
 }
+

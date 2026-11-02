@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { runDiagnostics } from '../lib/diagnostics';
-import { Settings2, Image as ImageIcon, LayoutTemplate, Link as LinkIcon, Upload, Loader2, Type, Copy, Check, ShieldCheck, GitFork, Sparkles, RotateCcw, Database } from 'lucide-react';
+import { Settings2, Image as ImageIcon, LayoutTemplate, Link as LinkIcon, Upload, Loader2, Type, Copy, Check, ShieldCheck, GitFork, Sparkles, RotateCcw, Database, Eye, EyeOff } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getShareableUrl, saveToLocalStorage, getFromLocalStorage, isMasterTemplate, isOfficialWebsite, sanitizeCardIdForSave, MASTER_CARD_ID, REMIX_DEFAULT_CARD_ID, getWebsiteName, OFFICIAL_WEBSITE_NAME, REMIX_WEBSITE_NAME } from '../lib/cardInstance';
+import { getShareableUrl, saveToLocalStorage, getFromLocalStorage, isMasterTemplate, isOfficialWebsite, sanitizeCardIdForSave, MASTER_CARD_ID, REMIX_DEFAULT_CARD_ID, getWebsiteName, OFFICIAL_WEBSITE_NAME, REMIX_WEBSITE_NAME, ORIGINAL_CARD_ID, ORIGINAL_WEBSITE_NAME } from '../lib/cardInstance';
 import { ECardSettings, TextElement, defaultSettings } from '../types';
 import { OpeningPage } from './OpeningPage';
 import { HeroSection } from './HeroSection';
@@ -394,7 +394,87 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
   };
 
   const [isRestoringOfficial, setIsRestoringOfficial] = useState(false);
+  const [isSeedingRemix, setIsSeedingRemix] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const handleSwitchToAlka2Remix = async () => {
+    setIsSeedingRemix(true);
+    try {
+      const targetId = REMIX_DEFAULT_CARD_ID; // 'anshul-alka-2'
+      let docSnap = await getDoc(doc(db, 'wedding_invitations', targetId));
+      let dataToSet = settings;
+
+      if (!docSnap.exists()) {
+        // Pre-seed anshul-alka-2 with current settings so user starts with complete wedding invitation data
+        const cleanSettings = JSON.parse(JSON.stringify(settings));
+        cleanSettings.clientName = 'Anshul & Alka 2';
+        cleanSettings.clientId = 'anshul-alka-2';
+        cleanSettings.savedAs = 'Anshul & Alka 2';
+        cleanSettings.remixName = 'Anshul & Alka 2';
+        cleanSettings.remixVersion = 2;
+        cleanSettings.isRemix = true;
+        cleanSettings.isOfficial = false;
+        cleanSettings.lastSaved = new Date().toISOString();
+        await setDoc(doc(db, 'wedding_invitations', targetId), cleanSettings);
+        dataToSet = cleanSettings;
+        console.log(`Pre-seeded separate document 'anshul-alka-2' in Firestore`);
+      } else {
+        dataToSet = { ...defaultSettings, ...docSnap.data() };
+      }
+
+      saveToLocalStorage(targetId, dataToSet);
+      localStorage.setItem('wedding_custom_card_id', targetId);
+      setSettings(dataToSet);
+      setCardId(targetId);
+
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('id', targetId);
+      window.history.pushState({}, '', newUrl.toString());
+
+      setStatusMessage({
+        text: `🎉 Activated 'Anshul & Alka 2' remix profile! Dedicated database document: '${targetId}'. 100% data separation with ZERO overlap.`,
+        type: 'success'
+      });
+      setTimeout(() => setStatusMessage(null), 6000);
+    } catch (err: any) {
+      console.error("Error activating remix:", err);
+      setStatusMessage({ text: `Failed to activate remix: ${err.message}`, type: 'error' });
+      setTimeout(() => setStatusMessage(null), 6000);
+    } finally {
+      setIsSeedingRemix(false);
+    }
+  };
+
+  const handleSwitchToOriginalClient = async () => {
+    try {
+      const targetId = ORIGINAL_CARD_ID; // 'nitin-sir-client-2'
+      let docSnap = await getDoc(doc(db, 'wedding_invitations', targetId));
+      let dataToSet = defaultSettings;
+      if (docSnap.exists()) {
+        dataToSet = { ...defaultSettings, ...docSnap.data() };
+      } else {
+        const local = getFromLocalStorage(targetId);
+        if (local) dataToSet = local;
+      }
+
+      saveToLocalStorage(targetId, dataToSet);
+      localStorage.setItem('wedding_custom_card_id', targetId);
+      setSettings(dataToSet);
+      setCardId(targetId);
+
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('id', targetId);
+      window.history.pushState({}, '', newUrl.toString());
+
+      setStatusMessage({
+        text: `Switched to Original Website ('${ORIGINAL_WEBSITE_NAME}')! Document: '${targetId}'.`,
+        type: 'success'
+      });
+      setTimeout(() => setStatusMessage(null), 5000);
+    } catch (err: any) {
+      console.error("Error switching to original:", err);
+    }
+  };
 
   const handleSwitchToOfficialData = async () => {
     setIsRestoringOfficial(true);
@@ -408,26 +488,36 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
       // Save to current cardId document in Firestore so this instance updates immediately
       const targetCardId = sanitizeCardIdForSave(cardId);
       const cleanData = JSON.parse(JSON.stringify(clientData));
-      cleanData.clientName = 'nitin sir client -2';
-      cleanData.clientId = 'nitin-sir-client-2';
-      cleanData.savedAs = 'nitin sir client -2';
+      const isAlka2 = targetCardId === 'anshul-alka-2' || targetCardId.includes('alka-2');
+
+      if (isAlka2) {
+        cleanData.clientName = 'Anshul & Alka 2';
+        cleanData.clientId = 'anshul-alka-2';
+        cleanData.savedAs = 'Anshul & Alka 2';
+        cleanData.remixName = 'Anshul & Alka 2';
+        cleanData.remixVersion = 2;
+      } else if (targetCardId === 'nitin-sir-client-2') {
+        cleanData.clientName = 'nitin sir client -2';
+        cleanData.clientId = 'nitin-sir-client-2';
+        cleanData.savedAs = 'nitin sir client -2';
+        cleanData.remixName = 'nitin sir client -2';
+      }
       cleanData.isOfficial = false;
       cleanData.isRemix = true;
-      cleanData.remixName = 'nitin sir client -2';
       cleanData.lastSaved = new Date().toISOString();
 
       await setDoc(doc(db, 'wedding_invitations', targetCardId), cleanData);
       if (targetCardId === 'nitin-sir-client-2') {
         await setDoc(doc(db, 'wedding_invitations', 'nitin sir client -2'), cleanData);
+        saveToLocalStorage('nitin sir client -2', cleanData);
       }
       saveToLocalStorage(targetCardId, cleanData);
-      saveToLocalStorage('nitin sir client -2', cleanData);
 
       // Save preference in localStorage
       localStorage.setItem('wedding_custom_card_id', targetCardId);
 
       setStatusMessage({
-        text: `🎉 Restored client data for '${REMIX_WEBSITE_NAME}'! All data is saved in the name of 'nitin sir client -2'.`,
+        text: `🎉 Restored template data for '${getWebsiteName(cardId)}'! Saved in dedicated document '${targetCardId}'.`,
         type: 'success'
       });
       setTimeout(() => setStatusMessage(null), 6000);
@@ -648,36 +738,29 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
           </div>
         )}
 
-        {/* Quick Action: Switch to Official Data */}
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200/80 px-4 py-2.5 flex items-center justify-between gap-2">
+        {/* Quick Action: Profile and Template Status */}
+        <div className="bg-gradient-to-r from-stone-900 to-stone-800 border-b border-stone-700 px-4 py-2.5 flex items-center justify-between gap-2 text-white">
           <div className="flex items-center gap-2 min-w-0">
-            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-amber-950 truncate">
-                {isOfficialWebsite() ? 'Official Master Template' : 'Remix Project'}
+              <p className="text-[11px] font-semibold text-white truncate flex items-center gap-1.5">
+                <span>{getWebsiteName(cardId)}</span>
+                <span className="text-[9px] font-mono bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                  {cardId}
+                </span>
               </p>
-              <p className="text-[10px] text-amber-700 truncate">
-                {isOfficialWebsite() ? 'Riyansh & Priyanshi (Template-3)' : `${REMIX_WEBSITE_NAME} (Isolated DB)`}
+              <p className="text-[10px] text-stone-300 truncate">
+                Zero Overlap Enforced • Isolated Document
               </p>
             </div>
           </div>
           <button
-            onClick={handleSwitchToOfficialData}
-            disabled={isRestoringOfficial}
-            className="text-[11px] font-medium px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded shadow-xs transition-colors whitespace-nowrap flex items-center gap-1 shrink-0 disabled:opacity-50"
-            title={isOfficialWebsite() ? "Restore official Riyansh & Priyanshi data" : `Clone official template into ${REMIX_WEBSITE_NAME}`}
+            onClick={cardId === 'anshul-alka-2' ? handleSwitchToOriginalClient : handleSwitchToAlka2Remix}
+            className="text-[11px] font-medium px-2.5 py-1 bg-white/10 hover:bg-white/20 text-stone-200 hover:text-white rounded border border-white/20 transition-colors whitespace-nowrap flex items-center gap-1 shrink-0 cursor-pointer"
+            title="Switch between original site and Anshul & Alka 2"
           >
-            {isRestoringOfficial ? (
-              <>
-                <Loader2 className="w-3 h-3 animate-spin" />
-                <span>Restoring...</span>
-              </>
-            ) : (
-              <>
-                <RotateCcw className="w-3 h-3" />
-                <span>{isOfficialWebsite() ? 'Switch to Official Data' : 'Clone Template Data'}</span>
-              </>
-            )}
+            <Sparkles className="w-3 h-3 text-[#C9A15A]" />
+            <span>{cardId === 'anshul-alka-2' ? 'To Original' : "To 'Alka 2'"}</span>
           </button>
         </div>
 
@@ -1332,18 +1415,108 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
                 </div>
               </div>
 
-              <h3 className="text-lg font-medium text-stone-800 border-b pb-2 mt-8 flex items-center justify-between">
-                <span>Small Advertisement & Creator Links</span>
-                <label className="flex items-center gap-2 text-xs font-normal text-stone-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.showAdvertisement !== false}
-                    onChange={(e) => setSettings(prev => ({ ...prev, showAdvertisement: e.target.checked }))}
-                    className="rounded text-stone-900 focus:ring-stone-900 border-stone-300"
-                  />
-                  Enable Advertisement
-                </label>
-              </h3>
+              {/* Prominent Hide & Unhide Advertisement Control */}
+              <div className="mt-8 bg-gradient-to-br from-stone-900 via-stone-850 to-stone-900 text-white p-5 rounded-2xl shadow-lg border border-stone-700/80 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#C9A15A] font-semibold flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" /> Footer Advertisement Control
+                    </span>
+                    <h3 className="text-base font-semibold text-white">Hide & Unhide Advertisement</h3>
+                    <p className="text-xs text-stone-300 mt-1 leading-relaxed">
+                      Control whether the small advertisement bar (single line advertising message, WhatsApp, and Instagram links) appears at the very end of the website.
+                    </p>
+                  </div>
+
+                  {/* Status Indicator Pill */}
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold shrink-0 border ${
+                    settings.showAdvertisement !== false 
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  }`}>
+                    {settings.showAdvertisement !== false ? (
+                      <>
+                        <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Visible (Unhidden)</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Hidden</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+
+                {/* Hide / Unhide Toggle Action Buttons */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettings(prev => ({ ...prev, showAdvertisement: true }));
+                      setPreviewView('hero');
+                      setStatusMessage({
+                        text: '👁️ Advertisement is now UNHIDDEN and visible at the end of the website.',
+                        type: 'success'
+                      });
+                      setTimeout(() => setStatusMessage(null), 3500);
+                    }}
+                    className={`px-4 py-2.5 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      settings.showAdvertisement !== false
+                        ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400'
+                        : 'bg-white/10 text-stone-300 hover:bg-white/20 hover:text-white'
+                    }`}
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Unhide Advertisement</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettings(prev => ({ ...prev, showAdvertisement: false }));
+                      setPreviewView('hero');
+                      setStatusMessage({
+                        text: '🚫 Advertisement is now HIDDEN from the end of the website.',
+                        type: 'success'
+                      });
+                      setTimeout(() => setStatusMessage(null), 3500);
+                    }}
+                    className={`px-4 py-2.5 rounded-xl font-medium text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      settings.showAdvertisement === false
+                        ? 'bg-amber-600 text-white shadow-md ring-2 ring-amber-400'
+                        : 'bg-white/10 text-stone-300 hover:bg-white/20 hover:text-white'
+                    }`}
+                  >
+                    <EyeOff className="w-4 h-4" />
+                    <span>Hide Advertisement</span>
+                  </button>
+                </div>
+
+                {/* Information status callout */}
+                <div className={`p-3 rounded-xl text-xs flex items-center gap-2.5 ${
+                  settings.showAdvertisement !== false
+                    ? 'bg-emerald-950/60 border border-emerald-500/30 text-emerald-200'
+                    : 'bg-amber-950/60 border border-amber-500/30 text-amber-200'
+                }`}>
+                  {settings.showAdvertisement !== false ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span><strong>Currently Unhidden:</strong> Small advertisement bar with WhatsApp, Instagram, and advertising message is visible to all website visitors.</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span><strong>Currently Hidden:</strong> The advertisement section at the footer is hidden and will not appear on the website.</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <h4 className="text-sm font-semibold text-stone-800 pt-2 flex items-center gap-2">
+                <span>Advertisement Message & Social Channels</span>
+                <span className="text-[11px] font-normal text-stone-500">(Displayed when unhidden)</span>
+              </h4>
 
               <div className="space-y-3 bg-white p-4 rounded-xl border border-stone-100 shadow-sm">
                 <label className="block text-sm font-medium text-stone-800">Small Line Message for Advertising</label>
@@ -1429,63 +1602,100 @@ export function AdminPanel({ settings, setSettings, onExit, isExiting, cardId, s
                 </span>
               </h3>
 
-              {/* Data Isolation Status Box */}
-              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-4 text-emerald-950 space-y-2">
+              {/* Data Isolation & Upcoming Remix Status Box */}
+              <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-5 text-emerald-950 space-y-3 shadow-xs">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                   <span className="font-semibold text-sm">
-                    {isOfficialWebsite() ? 'Official Website Master Instance' : 'Remix Data Isolation Active'}
+                    {cardId === 'anshul-alka-2' ? "Active Profile: 'Anshul & Alka 2'" : "Active Profile: 'Anshul & Alka' (Original)"}
                   </span>
-                  <span className="ml-auto text-[11px] font-mono bg-emerald-200/70 text-emerald-900 px-2 py-0.5 rounded">
-                    {isOfficialWebsite() ? 'Official Master' : 'Isolated Remix'}
+                  <span className="ml-auto text-[11px] font-mono bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded font-medium">
+                    Zero Overlap Active
                   </span>
                 </div>
-                <p className="text-xs text-emerald-800 leading-relaxed">
-                  {isOfficialWebsite() 
-                    ? `This is the official master website running on database ID "${cardId}". All initial wedding data is safely recovered and protected. Any remix created from this site will save to its own database and can never overwrite this website.`
-                    : `This remix is running on dedicated database ID "${cardId}" for '${REMIX_WEBSITE_NAME}'. All changes and files are saved in separate fields/documents and will never overlap with the official website.`
+                <p className="text-xs text-emerald-900/90 leading-relaxed">
+                  {cardId === 'anshul-alka-2'
+                    ? "You are currently running on the isolated 'Anshul & Alka 2' document ('anshul-alka-2'). All wedding ceremony data, images, and settings are saved separately and will never overwrite or overlap with the original website."
+                    : "You are currently on the original website document ('" + cardId + "'). Any remix created from this site will automatically be named 'Anshul & Alka 2' and save to separate fields in document 'anshul-alka-2' with zero data overlap."
                   }
                 </p>
+                <div className="pt-2 flex flex-col sm:flex-row gap-2 border-t border-emerald-200/60">
+                  <button
+                    type="button"
+                    onClick={handleSwitchToAlka2Remix}
+                    disabled={isSeedingRemix}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      cardId === 'anshul-alka-2'
+                        ? 'bg-emerald-700 text-white shadow-sm ring-1 ring-emerald-500'
+                        : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900'
+                    }`}
+                  >
+                    {isSeedingRemix ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Activating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Switch to 'Anshul & Alka 2' (Remix)</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSwitchToOriginalClient}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      cardId === ORIGINAL_CARD_ID
+                        ? 'bg-emerald-700 text-white shadow-sm ring-1 ring-emerald-500'
+                        : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900'
+                    }`}
+                  >
+                    <Check className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Switch to Original ('Anshul & Alka')</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Official Template & Hosting Sync Card */}
+              {/* Template Restore Card */}
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-5 rounded-xl border border-amber-200/90 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-amber-600 shrink-0" />
                     <div>
-                      <h4 className="text-sm font-semibold text-amber-950">Restore Client Template</h4>
-                      <p className="text-[11px] text-amber-800">Nitin sir client -2</p>
+                      <h4 className="text-sm font-semibold text-amber-950">Restore Verified Wedding Data</h4>
+                      <p className="text-[11px] text-amber-800">For {getWebsiteName(cardId)}</p>
                     </div>
                   </div>
                   <span className="text-[11px] font-mono bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded font-medium">
-                    Permanent
+                    Document: {cardId}
                   </span>
                 </div>
                 <p className="text-xs text-amber-900/90 leading-relaxed">
-                  Use this option to restore all verified wedding details for Anshul & Alka (groom & bride parents, 4 ceremonies in order, caricatures, and venues) into this database.
+                  Reset this active database to the verified wedding template details for Anshul & Alka (Parents of the Groom/Bride, 4 events in order, caricatures, venues, and colors).
                 </p>
                 <div className="flex flex-col gap-2 pt-1">
                   <button
                     onClick={handleSwitchToOfficialData}
                     disabled={isRestoringOfficial}
-                    className="w-full px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                    className="w-full px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
                   >
                     {isRestoringOfficial ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Restoring Client Data...</span>
+                        <span>Restoring Template Data...</span>
                       </>
                     ) : (
                       <>
                         <RotateCcw className="w-4 h-4" />
-                        <span>Reset to Nitin Sir Client -2 Data</span>
+                        <span>Reset Data for {getWebsiteName(cardId)}</span>
                       </>
                     )}
                   </button>
                   <div className="w-full px-3 py-2 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-md text-xs font-medium flex items-center justify-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Data Isolation Active: 100% separate from official website</span>
+                    <span>Data Isolation Enforced: Only saves to '{cardId}'</span>
                   </div>
                 </div>
               </div>

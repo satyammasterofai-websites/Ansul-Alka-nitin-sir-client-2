@@ -441,17 +441,20 @@ export function HeroSection({ settings, onOpenAdmin, onPauseMusic }: Props) {
             <p className="text-[11px] font-sans tracking-widest text-[#FAF5EA]/60 uppercase mt-3">
               {settings.adFooterText || 'Crafted with 🤍 by digiinvitations_'}
             </p>
+          </div>
+        )}
 
-            {onOpenAdmin && (
-              <button
-                onClick={() => onOpenAdmin()}
-                className="mt-3 p-1.5 bg-white/5 hover:bg-white/10 text-[#FAF5EA]/40 hover:text-[#FAF5EA] rounded-full transition-all flex items-center justify-center"
-                aria-label="Open Admin Panel"
-                title="Admin Settings"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {/* Admin Gear Button always rendered at bottom */}
+        {onOpenAdmin && (
+          <div className="w-full py-2.5 flex items-center justify-center bg-[#1c110b] relative z-10 border-t border-white/5">
+            <button
+              onClick={() => onOpenAdmin()}
+              className="p-1.5 bg-white/5 hover:bg-white/10 text-[#FAF5EA]/40 hover:text-[#FAF5EA] rounded-full transition-all flex items-center justify-center"
+              aria-label="Open Admin Panel"
+              title="Admin Settings"
+            >
+              <Settings className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </div>

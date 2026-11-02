@@ -38,13 +38,13 @@ export default function App() {
 
   // Dynamically set title and meta tags based on official template vs remix
   useEffect(() => {
-    const siteName = getWebsiteName();
+    const siteName = getWebsiteName(cardId);
     document.title = siteName;
     const ogTitle = document.getElementById('og-title-meta');
     if (ogTitle) ogTitle.setAttribute('content', siteName);
     const ogImg = document.getElementById('og-image-meta');
     if (ogImg && settings.ogImageUrl) ogImg.setAttribute('content', settings.ogImageUrl);
-  }, [settings.ogImageUrl]);
+  }, [settings.ogImageUrl, cardId]);
 
   // Clear file caches whenever database/card ID changes to prevent cross-contamination
   useEffect(() => {
@@ -87,7 +87,7 @@ export default function App() {
           console.log(`Loaded data from Firestore for card: ${cardId}`);
         } else {
           // If no document exists in Firestore for this cardId:
-          console.log(`Card document '${cardId}' not found in Firestore. Using Nitin sir client -2 default data...`);
+          console.log(`Card document '${cardId}' not found in Firestore. Initializing isolated database...`);
           isNewRemixDoc = true;
 
           // Check local storage first
@@ -113,7 +113,7 @@ export default function App() {
               if (dataUrl) {
                 const actualFileId = url.replace('ecard-file://', '');
                 // Populate cache ONLY if this file already belongs to the current cardId.
-                if (actualFileId.startsWith('nitin-sir-client-2-') || actualFileId.startsWith(`${cardId}-`)) {
+                if (actualFileId.startsWith(`${cardId}-`)) {
                   uploadCache.set(dataUrl, url);
                 }
                 return dataUrl;
@@ -137,15 +137,19 @@ export default function App() {
             })));
           }
 
+          const isAlka2 = cardId === 'anshul-alka-2' || cardId.includes('alka-2');
+          const instanceName = isAlka2 ? 'Anshul & Alka 2' : (cardId === 'nitin-sir-client-2' ? 'nitin sir client -2' : cardId);
+
           const merged = { 
             ...defaultSettings, 
             ...dataToUse,
-            clientName: 'nitin sir client -2',
-            clientId: 'nitin-sir-client-2',
-            savedAs: 'nitin sir client -2',
+            clientName: instanceName,
+            clientId: cardId,
+            savedAs: instanceName,
             isOfficial: false,
             isRemix: true,
-            remixName: 'nitin sir client -2'
+            remixName: instanceName,
+            remixVersion: isAlka2 ? 2 : 1
           };
           // Migration from old openingText properties
           if (!dataToUse.textElements && dataToUse.openingText) {
@@ -172,25 +176,29 @@ export default function App() {
               if (targetDocId === 'nitin-sir-client-2') {
                 await setDoc(doc(db, 'wedding_invitations', 'nitin sir client -2'), cleanInitial);
               }
-              console.log(`Initialized separate Firestore document for remix '${targetDocId}' and 'nitin sir client -2'`);
+              console.log(`Initialized separate Firestore document for remix '${targetDocId}'`);
             } catch (err) {
               console.warn(`Could not initialize Firestore doc for ${cardId}:`, err);
             }
           }
           saveToLocalStorage(cardId, merged);
         } else {
+          const isAlka2 = cardId === 'anshul-alka-2' || cardId.includes('alka-2');
+          const instanceName = isAlka2 ? 'Anshul & Alka 2' : (cardId === 'nitin-sir-client-2' ? 'nitin sir client -2' : cardId);
           const initSettings = {
             ...defaultSettings,
-            clientName: 'nitin sir client -2',
-            clientId: 'nitin-sir-client-2',
-            savedAs: 'nitin sir client -2',
+            clientName: instanceName,
+            clientId: cardId,
+            savedAs: instanceName,
             isOfficial: false,
             isRemix: true,
-            remixName: 'nitin sir client -2'
+            remixName: instanceName,
+            remixVersion: isAlka2 ? 2 : 1
           };
           await setDoc(docRef, initSettings);
-          await setDoc(doc(db, 'wedding_invitations', 'nitin sir client -2'), initSettings);
-          saveToLocalStorage(cardId, initSettings);
+          if (cardId === 'nitin-sir-client-2') {
+            await setDoc(doc(db, 'wedding_invitations', 'nitin sir client -2'), initSettings);
+          }
         }
       } catch (error: any) {
         console.warn('Error in loadSettings:', error.message);
@@ -367,21 +375,36 @@ export default function App() {
 
           // Firestore does not accept undefined values, so we strip them
           const cleanSettings = JSON.parse(JSON.stringify(settingsToSave));
-          cleanSettings.clientName = 'nitin sir client -2';
-          cleanSettings.clientId = 'nitin-sir-client-2';
-          cleanSettings.savedAs = 'nitin sir client -2';
+          const targetCardId = sanitizeCardIdForSave(cardId);
+          const isAlka2 = targetCardId === 'anshul-alka-2' || targetCardId.includes('alka-2');
+
+          if (isAlka2) {
+            cleanSettings.clientName = 'Anshul & Alka 2';
+            cleanSettings.clientId = 'anshul-alka-2';
+            cleanSettings.savedAs = 'Anshul & Alka 2';
+            cleanSettings.remixName = 'Anshul & Alka 2';
+            cleanSettings.remixVersion = 2;
+          } else if (targetCardId === 'nitin-sir-client-2') {
+            cleanSettings.clientName = 'nitin sir client -2';
+            cleanSettings.clientId = 'nitin-sir-client-2';
+            cleanSettings.savedAs = 'nitin sir client -2';
+            cleanSettings.remixName = 'nitin sir client -2';
+          } else {
+            cleanSettings.clientName = targetCardId;
+            cleanSettings.clientId = targetCardId;
+            cleanSettings.savedAs = targetCardId;
+            cleanSettings.remixName = targetCardId;
+          }
           cleanSettings.isOfficial = false;
           cleanSettings.isRemix = true;
-          cleanSettings.remixName = 'nitin sir client -2';
           cleanSettings.lastSaved = new Date().toISOString();
 
-          const targetCardId = sanitizeCardIdForSave(cardId);
           await setDoc(doc(db, 'wedding_invitations', targetCardId), cleanSettings);
           if (targetCardId === 'nitin-sir-client-2') {
             await setDoc(doc(db, 'wedding_invitations', 'nitin sir client -2'), cleanSettings);
+            saveToLocalStorage('nitin sir client -2', cleanSettings);
           }
           saveToLocalStorage(targetCardId, cleanSettings);
-          saveToLocalStorage('nitin sir client -2', cleanSettings);
         } catch (error: any) {
           console.warn('Error saving settings to Firestore, falling back to local storage:', error.message);
           const targetCardId = sanitizeCardIdForSave(cardId);
@@ -399,7 +422,9 @@ export default function App() {
     const targetCardId = sanitizeCardIdForSave(cardId);
     // Force a save to local storage immediately when exiting admin panel
     saveToLocalStorage(targetCardId, settings);
-    saveToLocalStorage('nitin sir client -2', settings);
+    if (targetCardId === 'nitin-sir-client-2') {
+      saveToLocalStorage('nitin sir client -2', settings);
+    }
     
     try {
           const prepareUrl = async (url: string, id: string) => {
@@ -439,12 +464,27 @@ export default function App() {
 
       // Firestore does not accept undefined values, so we strip them by serializing to JSON
       const cleanSettings = JSON.parse(JSON.stringify(settingsToSave));
-      cleanSettings.clientName = 'nitin sir client -2';
-      cleanSettings.clientId = 'nitin-sir-client-2';
-      cleanSettings.savedAs = 'nitin sir client -2';
+      const isAlka2 = targetCardId === 'anshul-alka-2' || targetCardId.includes('alka-2');
+
+      if (isAlka2) {
+        cleanSettings.clientName = 'Anshul & Alka 2';
+        cleanSettings.clientId = 'anshul-alka-2';
+        cleanSettings.savedAs = 'Anshul & Alka 2';
+        cleanSettings.remixName = 'Anshul & Alka 2';
+        cleanSettings.remixVersion = 2;
+      } else if (targetCardId === 'nitin-sir-client-2') {
+        cleanSettings.clientName = 'nitin sir client -2';
+        cleanSettings.clientId = 'nitin-sir-client-2';
+        cleanSettings.savedAs = 'nitin sir client -2';
+        cleanSettings.remixName = 'nitin sir client -2';
+      } else {
+        cleanSettings.clientName = targetCardId;
+        cleanSettings.clientId = targetCardId;
+        cleanSettings.savedAs = targetCardId;
+        cleanSettings.remixName = targetCardId;
+      }
       cleanSettings.isOfficial = false;
       cleanSettings.isRemix = true;
-      cleanSettings.remixName = 'nitin sir client -2';
       cleanSettings.lastSaved = new Date().toISOString();
 
       const savePromise = setDoc(doc(db, 'wedding_invitations', targetCardId), cleanSettings);
@@ -457,7 +497,9 @@ export default function App() {
         new Promise((_, reject) => setTimeout(() => reject(new Error("Database save timed out. Please check your internet connection.")), 15000))
       ]);
       saveToLocalStorage(targetCardId, cleanSettings);
-      saveToLocalStorage('nitin sir client -2', cleanSettings);
+      if (targetCardId === 'nitin-sir-client-2') {
+        saveToLocalStorage('nitin sir client -2', cleanSettings);
+      }
     } catch (error: any) {
       console.error('Error saving settings to Firestore on exit:', error);
       alert("Error saving to database: " + error.message + "\n\nFiles may have been too large or network disconnected.");
